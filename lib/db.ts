@@ -20,7 +20,7 @@ export type Event = {
 // Function to get events for a specific date and user
 export async function getEventsByDate(userId: string, date: string) {
   try {
-    const events = await sql<Event[]>`
+    const events = await sql `
       SELECT * FROM events 
       WHERE user_id = ${userId} AND date = ${date}
       ORDER BY start_time ASC
@@ -43,7 +43,7 @@ export async function createEvent(
   color = "#3b82f6",
 ) {
   try {
-    const result = await sql<Event[]>`
+    const result = await sql `
       INSERT INTO events (user_id, title, description, date, start_time, end_time, color)
       VALUES (${userId}, ${title}, ${description}, ${date}, ${startTime}, ${endTime}, ${color})
       RETURNING *
@@ -67,7 +67,7 @@ export async function updateEvent(
   color: string,
 ) {
   try {
-    const result = await sql<Event[]>`
+    const result = await sql `
       UPDATE events
       SET title = ${title}, 
           description = ${description}, 
@@ -111,7 +111,8 @@ export async function getEventsByMonth(userId: string, year: number, month: numb
 
     const endDate = `${nextYear}-${nextMonth.toString().padStart(2, "0")}-01`
 
-    const events = await sql<Event[]>`
+    // Remove the generic type argument from sql
+    const events = await sql`
       SELECT * FROM events 
       WHERE user_id = ${userId} 
       AND date >= ${startDate} 

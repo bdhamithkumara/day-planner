@@ -106,13 +106,14 @@ export function TimeSlotModal({ isOpen, onClose, date, userId }: TimeSlotModalPr
     onClose()
   }
 
+  const fetchEvents = async () => {
+    const eventData = await getAllEvents()
+    console.log("Fetched Events:", eventData)
+    setFetchedEvents(eventData)
+  }
+
   useEffect(() => {
     if (isOpen) {
-      const fetchEvents = async () => {
-        const eventData = await getAllEvents()
-        console.log("Fetched Events:", eventData)
-        setFetchedEvents(eventData || [])
-      }
       fetchEvents()
     }
   }, [isOpen])
