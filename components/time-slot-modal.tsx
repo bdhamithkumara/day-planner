@@ -54,29 +54,34 @@ export function TimeSlotModal({ isOpen, onClose, date, userId }: TimeSlotModalPr
 
   const handleAddEvent = async (formData: FormData) => {
     if (!selectedSlot) return
-
+  
     const endTimeHour = Number.parseInt(selectedSlot.split(":")[0], 10)
     const endTimeMinute = Number.parseInt(selectedSlot.split(":")[1], 10)
-
+  
     let endHour = endTimeHour
     let endMinute = endTimeMinute + 15
-
+  
     if (endMinute >= 60) {
       endHour = (endHour + 1) % 24
       endMinute = endMinute - 60
     }
-
+  
     const endTime = `${endHour.toString().padStart(2, "0")}:${endMinute.toString().padStart(2, "0")}`
-
-    formData.append("date", date.toISOString().split("T")[0])
+  
+    const localDate = `${date.getFullYear()}-${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`
+  
+    formData.append("date", localDate)
     formData.append("startTime", selectedSlot)
     formData.append("endTime", endTime)
-
+  
     await addEvent(formData)
     setSelectedSlot(null)
     await fetchEvents()
     onClose()
   }
+  
 
   const handleUpdateEvent = async (formData: FormData) => {
     if (!selectedEvent) return
@@ -127,7 +132,7 @@ export function TimeSlotModal({ isOpen, onClose, date, userId }: TimeSlotModalPr
   const timeSlots = []
   for (let hour = 0; hour < 24; hour++) {
     for (let minute = 0; minute < 60; minute += 15) {
-      const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`
+      const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}:00`
       timeSlots.push(time)
     }
   }
@@ -136,6 +141,9 @@ export function TimeSlotModal({ isOpen, onClose, date, userId }: TimeSlotModalPr
   filteredEvents.forEach((event) => {
     eventsByTime[event.start_time] = event
   })
+
+  console.log("time slots", timeSlots)
+  console.log("filteredEvents", filteredEvents)
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

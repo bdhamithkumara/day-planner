@@ -6,16 +6,12 @@ import { authOptions } from "@/lib/auth";
 import { createEvent, updateEvent, deleteEvent , getEventsByMonth} from "@/lib/db" // Import authOptions
 
 export async function addEvent(formData: FormData) {
-  const session = await getServerSession(authOptions); // Pass authOptions explicitly
-
-  if (!session?.user?.id) {
-    console.error("Session or user ID missing:", session); // Debug log
-    throw new Error("You must be logged in to create an event");
-  }
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) throw new Error("You must be logged in to create an event");
 
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
-  const date = formData.get("date") as string;
+  const date = formData.get("date") as string;        // <-- keep as string
   const startTime = formData.get("startTime") as string;
   const endTime = formData.get("endTime") as string;
   const color = formData.get("color") as string;
@@ -24,10 +20,20 @@ export async function addEvent(formData: FormData) {
     throw new Error("Missing required fields");
   }
 
-  await createEvent(session.user.id, title, description || null, date, startTime, endTime, color);
+
+  await createEvent(
+    session.user.id,
+    title,
+    description || null,
+    date,       
+    startTime,
+    endTime,
+    color
+  );
 
   revalidatePath("/");
 }
+
 
 export async function editEvent(formData: FormData) {
   const session = await getServerSession(authOptions)

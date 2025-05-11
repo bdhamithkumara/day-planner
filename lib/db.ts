@@ -42,6 +42,7 @@ export async function createEvent(
   endTime: string,
   color = "#3b82f6",
 ) {
+
   try {
     const result = await sql `
       INSERT INTO events (user_id, title, description, date, start_time, end_time, color)
@@ -66,12 +67,18 @@ export async function updateEvent(
   endTime: string,
   color: string,
 ) {
+
+  const cleanDate = new Date(date)
+  const formattedDate = `${cleanDate.getFullYear()}-${(cleanDate.getMonth() + 1)
+    .toString().padStart(2, "0")}-${cleanDate.getDate().toString().padStart(2, "0")}`
+
+
   try {
-    const result = await sql `
+    const result = await sql`
       UPDATE events
       SET title = ${title}, 
           description = ${description}, 
-          date = ${date}, 
+          date = ${formattedDate}, 
           start_time = ${startTime}, 
           end_time = ${endTime}, 
           color = ${color},
