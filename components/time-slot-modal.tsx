@@ -169,7 +169,11 @@ export function TimeSlotModal({ isOpen, onClose, date, userId }: TimeSlotModalPr
                     <span>{formatTime(time)}</span>
                     {hasEvent ? (
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium">{hasEvent.title}</span>
+                        <span className="text-sm font-medium">
+                          {hasEvent.title.length > 6 
+                            ? `${hasEvent.title.slice(0, 6)}...` 
+                            : hasEvent.title}
+                        </span>
                         <Edit className="h-4 w-4 text-gray-500" />
                       </div>
                     ) : (

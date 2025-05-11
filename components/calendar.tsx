@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { Event } from "@/lib/db"
 import { TimeSlotModal } from "./time-slot-modal"
+import { Tooltip } from "./ToolTip"
 
 type CalendarProps = {
   events: Event[]
@@ -16,14 +17,21 @@ export function Calendar({ events, userId }: CalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [holidays, SetHolidays] = useState([])
 
   const getDaysInMonth = (year: number, month: number) => {
     return new Date(year, month + 1, 0).getDate()
   }
 
   const getFirstDayOfMonth = (year: number, month: number) => {
-    return new Date(year, month, 1).getDay()
+    const day = new Date(year, month, 1).getDay()
+    return day === 0 ? 6 : day - 1
   }
+
+  // this for starting week in sunday
+  // const getFirstDayOfMonth = (year: number, month: number) => {
+  //   return new Date(year, month, 1).getDay()
+  // }
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
@@ -62,7 +70,7 @@ export function Calendar({ events, userId }: CalendarProps) {
     "December",
   ]
 
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+  const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
   // Filter events for the current month
   const currentMonthEvents = events.filter((event) => {
@@ -80,6 +88,55 @@ export function Calendar({ events, userId }: CalendarProps) {
     eventsByDate[dateStr].push(event)
   })
 
+  async function fetchHolidays() {
+    const calendarId = encodeURIComponent('db589a2f4025e5c1e05b3d3670dea21a3428a4a770091e596f84189dca6f94c5@group.calendar.google.com')
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_API_KEY
+    const timeMin = new Date().toISOString()
+    const timeMax = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString()
+  
+    const res = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?key=${apiKey}&timeMin=${timeMin}&timeMax=${timeMax}`
+    )
+  
+    const data = await res.json()
+    return data.items // array of events
+  }
+
+  useEffect(() => {
+
+    const fetch_Holiday =async () =>{
+      const holiday = await fetchHolidays()
+      console.log(holiday)
+      SetHolidays(holiday)
+    }
+
+    fetch_Holiday()
+  }, [])
+
+  type HolidayByDate = Record<string, { summary: string; color: string }>
+
+const holidaysByDate: HolidayByDate = {}
+
+holidays.forEach((holiday : any) => {
+  const dateStr = holiday.start.date
+  const summary = holiday.summary
+
+  let color = ""
+
+  if (summary.includes("Poya Day")) {
+    color = "bg-yellow-200"
+  } else if (summary.includes("(P,B,M)")) {
+    color = "bg-red-200"
+  } else if (summary.includes("(P,B)")) {
+    color = "bg-orange-200"
+  }
+
+  if (color) {
+    holidaysByDate[dateStr] = { summary, color }
+  }
+})
+  
+
   const days = []
   // Add empty cells for days before the first day of the month
   for (let i = 0; i < firstDayOfMonth; i++) {
@@ -92,17 +149,28 @@ export function Calendar({ events, userId }: CalendarProps) {
     const dateStr = date.toISOString().split("T")[0]
     const hasEvents = eventsByDate[dateStr] && eventsByDate[dateStr].length > 0
 
+    const isToday = date.toDateString() === new Date().toDateString()
+
+    const holiday = holidaysByDate[dateStr]
+
     days.push(
+      <Tooltip text={holiday ? holiday.summary : ""}  key={day}>
       <div
         key={day}
-        className={cn("h-12 border border-gray-200 p-1 cursor-pointer hover:bg-gray-50 transition-colors", {
-          "bg-blue-50": hasEvents,
-        })}
+        title={holiday ? holiday.summary : ""}
+        className={cn(
+          "h-12 border border-gray-200 p-1 cursor-pointer hover:bg-gray-50 transition-colors",
+          {
+            "bg-blue-50": hasEvents,
+            "border-red-500": isToday, 
+            [holiday?.color || ""]: holiday,
+          },
+        )}
         onClick={() => handleDateClick(date)}
       >
         <div className="flex flex-col h-full">
           <span
-            className={cn("text-sm font-medium", {
+            className={cn("text-sm font-medium text-center p-1", {
               "text-blue-600": hasEvents,
             })}
           >
@@ -114,7 +182,8 @@ export function Calendar({ events, userId }: CalendarProps) {
             </div>
           )}
         </div>
-      </div>,
+      </div>
+      </Tooltip>,
     )
   }
 
