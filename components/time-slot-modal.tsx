@@ -14,6 +14,7 @@ type TimeSlotModalProps = {
   isOpen: boolean
   onClose: () => void
   date: Date
+  events: Event[];  
   userId: string
 }
 
@@ -112,10 +113,13 @@ export function TimeSlotModal({ isOpen, onClose, date, userId }: TimeSlotModalPr
   }
 
   const fetchEvents = async () => {
-    const eventData = await getAllEvents()
-    console.log("Fetched Events:", eventData)
-    setFetchedEvents(eventData)
-  }
+    const eventData = await getAllEvents();
+  
+    const typedEvents = eventData as Event[];
+    console.log("Fetched Events:", typedEvents);
+  
+    setFetchedEvents(typedEvents);
+  };
 
   useEffect(() => {
     if (isOpen) {
