@@ -3,7 +3,14 @@ import GoogleProvider from "next-auth/providers/google";
 import { neon } from "@neondatabase/serverless";
 import crypto from "crypto";
 
+if (!process.env.DATABASE_URL) {
+  throw new Error("FATAL: DATABASE_URL environment variable is not set.");
+}
 const sql = neon(process.env.DATABASE_URL!);
+
+if (!process.env.NEXTAUTH_SECRET) {
+  throw new Error("FATAL: NEXTAUTH_SECRET environment variable is not set.");
+}
 const token = process.env.NEXTAUTH_SECRET;
 
 export const authOptions: NextAuthOptions = {
@@ -26,6 +33,10 @@ export const authOptions: NextAuthOptions = {
 
         // If user doesn't exist, create a new user
         if (result.length === 0) {
+          // user.id is expected to be populated by NextAuth.js from the Google user profile.
+          // crypto.randomUUID() is used as a fallback to generate a unique ID
+          // if user.id is not available (e.g., for a new user where the mapping might not yet have occurred or is unexpected).
+          // This ensures that a unique ID is always available for the user record in the database.
           const userId = user.id || crypto.randomUUID();
           await sql`
             INSERT INTO users (id, name, email, image)
@@ -39,7 +50,7 @@ export const authOptions: NextAuthOptions = {
         return true;
       } catch (error) {
         console.error("Error during sign in:", error);
-        return false;
+        throw error;
       }
     },
     async jwt({ token, user }) {
