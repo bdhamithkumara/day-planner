@@ -69,6 +69,10 @@ export async function updateEvent(
 ) {
 
   const cleanDate = new Date(date)
+  if (isNaN(cleanDate.getTime())) { // Check if the date is invalid
+    console.error("Invalid date string received for updateEvent:", date);
+    throw new Error("Invalid date format provided. Failed to update event.");
+  }
   const formattedDate = `${cleanDate.getFullYear()}-${(cleanDate.getMonth() + 1)
     .toString().padStart(2, "0")}-${cleanDate.getDate().toString().padStart(2, "0")}`
 
