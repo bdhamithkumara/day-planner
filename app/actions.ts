@@ -32,10 +32,10 @@ export async function addEvent(formData: FormData) {
   const date = formData.get("date") as string;        // <-- keep as string
   const startTime = formData.get("startTime") as string;
   const endTime = formData.get("endTime") as string;
-  const color = formData.get("color") as string;
+  const rawColor = formData.get("color") as string | null; // Retrieve as potentially null
 
-  if (!rawTitle || !date || !startTime || !endTime || !color) { // Keep validation on rawTitle and ensure color is also present
-    throw new Error("Missing required fields");
+  if (!rawTitle || !date || !startTime || !endTime) { // Color removed from this check
+    throw new Error("Missing required fields (title, date, startTime, endTime are required)");
   }
 
   if (!YYYYMMDD_REGEX.test(date)) {
@@ -47,9 +47,15 @@ export async function addEvent(formData: FormData) {
   if (!HHMM_REGEX.test(endTime)) {
     throw new Error("Invalid end time format. Expected HH:MM.");
   }
-  if (!HEX_COLOR_REGEX.test(color)) {
-    throw new Error("Invalid color format. Expected hex color (e.g., #RRGGBB or #RGB).");
+
+  let colorToStore: string | undefined = undefined;
+  if (rawColor && rawColor.trim() !== "") { // If color is provided and not just whitespace
+    if (!HEX_COLOR_REGEX.test(rawColor)) {
+      throw new Error("Invalid color format. Expected hex color (e.g., #RRGGBB or #RGB).");
+    }
+    colorToStore = rawColor;
   }
+  // If rawColor is null, empty, or whitespace, colorToStore remains undefined.
 
   const title = escapeHtml(rawTitle);
   const description = rawDescription ? escapeHtml(rawDescription) : null;
@@ -61,7 +67,7 @@ export async function addEvent(formData: FormData) {
     date,       
     startTime,
     endTime,
-    color
+    colorToStore // Pass the processed color
   );
 
   revalidatePath("/");
